@@ -28,3 +28,6 @@ fabric3
 django-filters
 django-compressor
 django-filter==2.0.0
+django-allauth
+djangorestframework-jwt
+requests

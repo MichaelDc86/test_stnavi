@@ -1,4 +1,3 @@
-from django.contrib.auth.decorators import login_required
 from django_filters.rest_framework import DjangoFilterBackend
 from project.api.serializers import ProjectUserSerializer, PostSerializer, PostUpdateSerializer
 from rest_framework import generics
@@ -12,7 +11,9 @@ from rest_framework import permissions
 
 from project.models import ProjectUser, Post
 
+
 from rest_framework.permissions import IsAuthenticated
+from rest_framework_jwt.authentication import JSONWebTokenAuthentication
 
 
 class CustomProjectsSetPagination(PageNumberPagination):
@@ -34,17 +35,17 @@ def api_root(request):
     })
 
 
-@authentication_classes((SessionAuthentication, BasicAuthentication))
+@authentication_classes((SessionAuthentication, BasicAuthentication, JSONWebTokenAuthentication))
 @permission_classes((IsAuthenticated,))
 class ProjectUserList(generics.ListCreateAPIView):
 
+    http_method_names = ['get', 'head']
     model = ProjectUser
 
     def get_queryset(self):
         user = self.request.user
-        return ProjectUser.objects.filter(username=user.username)  # all().order_by('is_active', 'username')
+        return ProjectUser.objects.filter(username=user.username)
 
-    # queryset = ProjectUser.objects.all().order_by('is_active', 'username')
     serializer_class = ProjectUserSerializer
     pagination_class = CustomProjectsSetPagination
     parser_classes = (MultiPartParser,)
@@ -54,12 +55,21 @@ class ProjectUserList(generics.ListCreateAPIView):
 
 
 class Register(generics.ListCreateAPIView):
+    http_method_names = ['post', 'head']
     model = ProjectUser
     serializer_class = ProjectUserSerializer
     queryset = []  # ProjectUser.objects.none()
 
 
-@authentication_classes((SessionAuthentication, BasicAuthentication))
+    # def post(self, request, *args, **kwargs):
+    #     message = f'To verify your signup on {settings.DOMAI_NAME} click the link'
+    #     from_email = settings.DOMAI_NAME
+    #     subject =
+    #     send_mail(subject, message, from_email, [self.email], fail_silently=False, **kwargs)
+    #     return self.create(request, *args, **kwargs)
+
+
+@authentication_classes((SessionAuthentication, BasicAuthentication, JSONWebTokenAuthentication))
 @permission_classes((IsAuthenticated,))
 class ProjectUserDetail(generics.RetrieveUpdateDestroyAPIView):
     model = ProjectUser
@@ -91,37 +101,49 @@ class PostsList(generics.ListCreateAPIView):
     filterset_fields = ('id__user',)
 
 
-@authentication_classes((SessionAuthentication, BasicAuthentication))
+@authentication_classes((SessionAuthentication, BasicAuthentication, JSONWebTokenAuthentication))
 @permission_classes((IsAuthenticated,))
 class PostsDetail(generics.RetrieveUpdateDestroyAPIView):
+    http_method_names = ['get', 'put', 'delete', 'head', 'patch']
     model = Post
 
     def get_queryset(self):
-        self.queryset = Post.objects.all()  # filter(user_id=user.id).order_by('title')
+        self.queryset = Post.objects.filter(id=self.kwargs['pk'])
         return self.queryset
 
+    def check_author(self):
+        user = self.request.user.id
+        item = self.get_object().user_id
+        return bool(user == item)
+
     def get_serializer_class(self):
-        user = self.request.user
-        item = self.request.data.get('user')
-        if user == item:
+
+        if self.check_author():
             self.serializer_class = PostSerializer
         else:
             self.serializer_class = PostUpdateSerializer
         return self.serializer_class
 
     def get_permissions(self):
-        user = self.request.user
-        item = self.request.data.get('user')
-        if user == item:
-            perms = []
+
+        if self.queryset:
+
+            if self.queryset[0].user_id == self.request.user.id:
+                if 'delete' not in self.http_method_names:
+                    self.http_method_names.append('delete')
+                perms = []
+            else:
+                perms = [IsAuthenticated, DeletePermission]
+                if 'delete' in self.http_method_names:
+                    self.http_method_names.remove('delete')
+            return [p() for p in perms]
         else:
-            perms = [api_view(['GET', 'PUT'])]
-        return [p() for p in perms]
+            return []
 
 
-# class DeletePermission(permissions.BasePermission):
-#
-#     def has_permission(self, request, view):
-#         ip_addr = request.META['REMOTE_ADDR']
-#         blacklisted = Blacklist.objects.filter(ip_addr=ip_addr).exists()
-#         return not blacklisted
+class DeletePermission(permissions.BasePermission):
+
+    def has_permission(self, request, view):
+        if request.method in ['DELETE', 'OPTIONS']:
+            return False
+        return True

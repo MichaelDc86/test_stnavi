@@ -11,6 +11,8 @@ https://docs.djangoproject.com/en/2.2/ref/settings/
 """
 
 import os
+import json
+import datetime
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -42,7 +44,16 @@ INSTALLED_APPS = [
     'rest_auth',
     'django_filters',
     'project',
+
+    'django.contrib.sites',
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'auto_bot',
+
 ]
+
+SITE_ID = 1
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -84,8 +95,10 @@ REST_FRAMEWORK = {
         'django.core.files.uploadhandler.MemoryFileUploadHandler',
         'django.core.files.uploadhandler.TemporaryFileUploadHandler'],
     'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_jwt.authentication.JSONWebTokenAuthentication',
         'rest_framework.authentication.BasicAuthentication',
         'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.TokenAuthentication',
     ),
     'DEFAULT_FILTER_BACKENDS': ('django_filters.rest_framework.DjangoFilterBackend',),
     'SEARCH_PARAM': 'search_param',
@@ -95,21 +108,31 @@ REST_FRAMEWORK = {
 
 DOMAIN_NAME = 'http://localhost:8000'
 
-# EMAIL_HOST = 'smtp.yandex.ru'
-# EMAIL_PORT = ' 465'
-# EMAIL_HOST_USER = ''
-# EMAIL_HOST_PASSWORD = ''
-# EMAIL_USE_SSL = True
-
-EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
+# EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
 # EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+
+# EMAIL_HOST = 'localhost'
+# EMAIL_PORT = '25'
+# EMAIL_HOST_USER = 'django@gmail.com'
+# EMAIL_HOST_PASSWORD = 'pass'
+# EMAIL_USE_SSL = False
+
+EMAIL_HOST = 'smtp.sendgrid.net'
+EMAIL_PORT = '587'
+EMAIL_HOST_USER = 'apikey'
+
+with open('static/pass.json', 'r') as f:
+    pw = json.load(f)
+
+EMAIL_HOST_PASSWORD = pw['EMAIL_HOST_PASSWORD']
+
 EMAIL_FILE_PATH = 'tmp/email-massages'
 
-EMAIL_HOST = 'localhost'
-EMAIL_PORT = '25'
-EMAIL_HOST_USER = 'user@gmail.com'
-EMAIL_HOST_PASSWORD = 'pass'
-EMAIL_USE_SSL = False
+ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
+ACCOUNT_AUTHENTICATION_METHOD = 'email'
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_USERNAME_REQUIRED = False
 
 # Database
 # https://docs.djangoproject.com/en/2.2/ref/settings/#databases
@@ -140,6 +163,15 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+REST_USE_JWT = True
+
+JWT_AUTH = {
+
+    'JWT_VERIFY': True,
+    'JWT_VERIFY_EXPIRATION': True,
+    'JWT_EXPIRATION_DELTA': datetime.timedelta(days=14),
+    'JWT_AUTH_HEADER_PREFIX': 'AUTH_HEADER',
+}
 
 # Internationalization
 # https://docs.djangoproject.com/en/2.2/topics/i18n/
@@ -162,45 +194,12 @@ STATIC_URL = '/static/'
 
 AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
-    'social_core.backends.vk.VKOAuth2',
-    'social_core.backends.facebook.FacebookOAuth2',
-    'social_core.backends.github.GithubOAuth2',
+    'allauth.account.auth_backends.AuthenticationBackend',
 )
 
 SOCIAL_AUTH_CREATE_USERS = True
 
-SOCIAL_AUTH_URL_NAMESPACE = 'social'
-
-# with open('json/vk.json', 'r') as f:
-#     vk = json.load(f)
-#
-# SOCIAL_AUTH_LOGIN_ERROR_URL = '/'
-# SOCIAL_AUTH_VK_OAUTH2_KEY = vk['SOCIAL_AUTH_VK_OAUTH2_KEY']
-# SOCIAL_AUTH_VK_OAUTH2_SECRET = vk['SOCIAL_AUTH_VK_OAUTH2_SECRET']
-
-SOCIAL_AUTH_REDIRECT_IS_HTTPS = True
-
-SOCIAL_AUTH_VK_OAUTH2_IGNORE_DEFAULT_SCOPE = True
-SOCIAL_AUTH_Github_OAUTH2_IGNORE_DEFAULT_SCOPE = True
-SOCIAL_AUTH_VK_OAUTH2_SCOPE = [
-    'email',
-    'profile',
-    'openid',
-    'photo',
-    'user_photo',
-    'https://www.vkapis.com/auth/plus.login',
-]
-
-SOCIAL_AUTH_PIPELINE = (
-    'social_core.pipeline.social_auth.social_details',
-    'social_core.pipeline.social_auth.social_uid',
-    'social_core.pipeline.social_auth.auth_allowed',
-    'social_core.pipeline.social_auth.social_user',
-    'social_core.pipeline.user.create_user',
-    'social_core.pipeline.social_auth.associate_user',
-    'social_core.pipeline.social_auth.load_extra_data',
-    'social_core.pipeline.user.user_details',
-)
+LOGIN_REDIRECT_URL = '/'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media/')

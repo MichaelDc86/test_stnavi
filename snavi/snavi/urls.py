@@ -15,7 +15,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, re_path
-from django.conf.urls import include
+from django.conf.urls import include, url
 from django.conf import settings
 from django.conf.urls.static import static
 import project.views as views
@@ -27,6 +27,8 @@ urlpatterns = [
     re_path(r'^$', views.api_root),
     re_path(r'^api/', include('project.api.urls', namespace='api')),
     re_path(r'^register/$', views.Register.as_view(), name='register'),
+
+    url(r'^accounts/', include('allauth.urls')),
 
 ]
 
