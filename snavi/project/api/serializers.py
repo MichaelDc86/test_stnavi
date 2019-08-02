@@ -18,7 +18,7 @@ class ProjectUserSerializer(serializers.HyperlinkedModelSerializer):
         user.set_password(validated_data['password'])
         user.save()
         print('---------------------------------------------------------------------------')
-        link = settings.DOMAIN_NAME + '/login'
+        link = settings.DOMAIN_NAME + 'accounts/login'
         subject = 'Email verification for django'
         message = f'To verify your email on {settings.DOMAIN_NAME} click the {link}'
         send_mail(subject, message, settings.EMAIL_HOST_USER, [user.email], fail_silently=False)

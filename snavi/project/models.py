@@ -20,7 +20,8 @@ class Post(models.Model):
     title = models.CharField(verbose_name='title', max_length=128)
     date_created = models.DateField(verbose_name='creation date', default=datetime.date.today())
     content = models.CharField(verbose_name='content', max_length=512)
-    like = models.BooleanField(verbose_name='like/unlike', default=False)
+    # like = models.BooleanField(verbose_name='like/unlike', default=False)
+    like = models.IntegerField(verbose_name='likes', default=0)
 
     def __str__(self):
         return self.title

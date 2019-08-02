@@ -49,7 +49,6 @@ INSTALLED_APPS = [
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
-    'auto_bot',
 
 ]
 
@@ -109,8 +108,8 @@ REST_FRAMEWORK = {
 DOMAIN_NAME = 'http://localhost:8000'
 
 # EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
-# EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 
 # EMAIL_HOST = 'localhost'
 # EMAIL_PORT = '25'
@@ -122,10 +121,10 @@ EMAIL_HOST = 'smtp.sendgrid.net'
 EMAIL_PORT = '587'
 EMAIL_HOST_USER = 'apikey'
 
-with open('static/pass.json', 'r') as f:
-    pw = json.load(f)
+# with open('static/pass.json', 'r') as f:
+#     pw = json.load(f)
 
-EMAIL_HOST_PASSWORD = pw['EMAIL_HOST_PASSWORD']
+# EMAIL_HOST_PASSWORD = pw['EMAIL_HOST_PASSWORD']
 
 EMAIL_FILE_PATH = 'tmp/email-massages'
 

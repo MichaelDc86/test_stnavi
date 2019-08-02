@@ -95,7 +95,7 @@ class PostsList(generics.ListCreateAPIView):
     queryset = Post.objects.all().order_by('date_created', 'title')
     serializer_class = PostSerializer
     pagination_class = CustomProjectsSetPagination
-    parser_classes = (MultiPartParser,)
+    # parser_classes = (MultiPartParser,)
 
     filter_backends = (DjangoFilterBackend,)
     filterset_fields = ('id__user',)
